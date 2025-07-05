@@ -61,17 +61,12 @@ addopts = [
     "-p", "no:asyncio",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0.0",
-]
 
 [tool.ruff]
 target-version = "py38"
 line-length = 88
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -112,5 +107,8 @@ mypy_path = "src"
 
 [dependency-groups]
 dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.12.2",
     "mypy>=1.14.1",
 ]

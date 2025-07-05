@@ -2,10 +2,11 @@
 Command-line interface for keepomize.
 """
 
-import sys
-import subprocess
 import argparse
-from typing import List, Any
+import subprocess
+import sys
+from typing import Any, List
+
 from ruamel.yaml import YAML
 
 from .core import process_secret
@@ -14,7 +15,7 @@ from .core import process_secret
 def main() -> None:
     """
     Main entry point for the keepomize CLI.
-    
+
     Reads a multi-document YAML stream from stdin, finds any Kubernetes Secret
     resources, and replaces Keeper URIs in their stringData and data fields
     by resolving them through ksm.
@@ -29,41 +30,41 @@ Examples:
 
 Keeper URI format:
   keeper://<TITLE|UID>/<selector>/<parameters>[[predicate1][predicate2]]
-  
+
   Examples:
     keeper://MySQL Database/field/password
-    keeper://API Keys/field/api_key  
+    keeper://API Keys/field/api_key
     keeper://Contact/field/name[first]
     keeper://Record/custom_field/phone[1][number]
 
 For more information about Keeper notation:
 https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
         """,
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    
-    args = parser.parse_args()
-    
+
+    parser.parse_args([])
+
     # If we get here, no --help was used, so proceed with normal processing
     # Use ruamel.yaml for better preservation of formatting and comments
     yaml: YAML = YAML()
     yaml.preserve_quotes = True
     yaml.width = 4096  # Avoid line wrapping
-    
+
     # Load all documents from stdin
     try:
         documents: List[Any] = list(yaml.load_all(sys.stdin))
     except Exception as e:
         print(f"Error: Failed to parse YAML input: {e}", file=sys.stderr)
         sys.exit(1)
-    
+
     # Process each document
     for i, doc in enumerate(documents):
         if doc is None:
             continue
-            
+
         # Check if this is a Kubernetes Secret
-        if isinstance(doc, dict) and doc.get('kind') == 'Secret':
+        if isinstance(doc, dict) and doc.get("kind") == "Secret":
             try:
                 process_secret(doc)
             except subprocess.CalledProcessError:
@@ -71,7 +72,7 @@ https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
             except Exception as e:
                 print(f"Error processing document {i}: {e}", file=sys.stderr)
                 sys.exit(1)
-    
+
     # Output all documents
     yaml.dump_all(documents, sys.stdout)
 
