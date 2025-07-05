@@ -19,7 +19,7 @@ KEEPER_URI_PATTERN = re.compile(r'^keeper://(.+)$')
 
 def resolve_keeper_uri(uri: str) -> str:
     """
-    Resolve a Keeper URI using ksm exec.
+    Resolve a Keeper URI using ksm secret notation command.
     
     Args:
         uri: A Keeper URI using Keeper notation, such as:
@@ -40,12 +40,11 @@ def resolve_keeper_uri(uri: str) -> str:
     if not ksm_path:
         raise FileNotFoundError("ksm command not found in PATH")
     
-    # Use ksm exec with the URI in an environment variable
-    env_var = "KEEPER_RESOLVE_URI"
-    cmd = [ksm_path, "exec", "--", "bash", "-c", f"echo -n ${env_var}"]
+    # Use ksm secret notation command to resolve the URI directly
+    cmd = [ksm_path, "secret", "notation", uri]
     
-    # Pass through KSM_* environment variables along with our URI
-    env = {env_var: uri}
+    # Pass through KSM_* environment variables
+    env = {}
     for key, value in os.environ.items():
         if key.startswith("KSM_"):
             env[key] = value

@@ -113,7 +113,7 @@ Where:
 2. **Processing**: 
    - Identifies Kubernetes Secret resources (where `kind: Secret`)
    - Scans `stringData` and `data` fields for Keeper URIs
-   - Resolves URIs using `ksm exec` with environment variables
+   - Resolves URIs using `ksm secret notation` command
    - For `data` fields, base64 encodes the resolved values
 3. **Output**: Writes the modified YAML to stdout
 

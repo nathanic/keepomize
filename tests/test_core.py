@@ -93,14 +93,13 @@ class TestResolveKeeperUri:
         call_args = mock_run.call_args
         env_passed = call_args.kwargs['env']
         
-        assert 'KEEPER_RESOLVE_URI' in env_passed
         assert 'KSM_CONFIG' in env_passed
         assert 'KSM_TOKEN' in env_passed
         assert 'OTHER_VAR' not in env_passed  # Non-KSM vars should not be passed
+        assert 'KEEPER_RESOLVE_URI' not in env_passed  # No longer needed with direct notation command
         
         assert env_passed['KSM_CONFIG'] == '/path/to/config'
         assert env_passed['KSM_TOKEN'] == 'secret123'
-        assert env_passed['KEEPER_RESOLVE_URI'] == 'keeper://MySQL Database/field/password'
 
 
 class TestProcessSecret:
