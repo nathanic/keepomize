@@ -4,6 +4,7 @@ Command-line interface for keepomize.
 
 import sys
 import subprocess
+import argparse
 from typing import List
 from ruamel.yaml import YAML
 
@@ -18,6 +19,32 @@ def main() -> None:
     resources, and replaces Keeper URIs in their stringData and data fields
     by resolving them through ksm.
     """
+    parser = argparse.ArgumentParser(
+        prog="keepomize",
+        description="A filter for Kubernetes manifests that resolves Keeper URIs in Secret resources",
+        epilog="""
+Examples:
+  kustomize build overlays/prod | keepomize | kubectl apply -f -
+  kustomize build overlays/prod | keepomize | oc apply -f -
+
+Keeper URI format:
+  keeper://<TITLE|UID>/<selector>/<parameters>[[predicate1][predicate2]]
+  
+  Examples:
+    keeper://MySQL Database/field/password
+    keeper://API Keys/field/api_key  
+    keeper://Contact/field/name[first]
+    keeper://Record/custom_field/phone[1][number]
+
+For more information about Keeper notation:
+https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    args = parser.parse_args()
+    
+    # If we get here, no --help was used, so proceed with normal processing
     # Use ruamel.yaml for better preservation of formatting and comments
     yaml = YAML()
     yaml.preserve_quotes = True
