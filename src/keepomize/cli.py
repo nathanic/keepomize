@@ -5,7 +5,7 @@ Command-line interface for keepomize.
 import sys
 import subprocess
 import argparse
-from typing import List
+from typing import List, Any
 from ruamel.yaml import YAML
 
 from .core import process_secret
@@ -46,13 +46,13 @@ https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
     
     # If we get here, no --help was used, so proceed with normal processing
     # Use ruamel.yaml for better preservation of formatting and comments
-    yaml = YAML()
+    yaml: YAML = YAML()
     yaml.preserve_quotes = True
     yaml.width = 4096  # Avoid line wrapping
     
     # Load all documents from stdin
     try:
-        documents = list(yaml.load_all(sys.stdin))
+        documents: List[Any] = list(yaml.load_all(sys.stdin))
     except Exception as e:
         print(f"Error: Failed to parse YAML input: {e}", file=sys.stderr)
         sys.exit(1)

@@ -107,3 +107,10 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
+files = ["src/keepomize"]
+mypy_path = "src"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.14.1",
+]

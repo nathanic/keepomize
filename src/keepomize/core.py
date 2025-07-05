@@ -8,13 +8,13 @@ import base64
 import shutil
 import sys
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Pattern, Optional
 
 
 # Pattern to match Keeper URIs using Keeper notation
 # Matches keeper://<title_or_uid>/<selector>/<parameters>[[predicates]]
 # Allows for spaces, special characters, and escaped characters in titles
-KEEPER_URI_PATTERN = re.compile(r'^keeper://(.+)$')
+KEEPER_URI_PATTERN: Pattern[str] = re.compile(r'^keeper://(.+)$')
 
 
 def resolve_keeper_uri(uri: str) -> str:
@@ -36,7 +36,7 @@ def resolve_keeper_uri(uri: str) -> str:
         FileNotFoundError: If ksm command is not found
     """
     # Find the full path to ksm
-    ksm_path = shutil.which("ksm")
+    ksm_path: Optional[str] = shutil.which("ksm")
     if not ksm_path:
         raise FileNotFoundError("ksm command not found in PATH")
     
@@ -44,13 +44,13 @@ def resolve_keeper_uri(uri: str) -> str:
     cmd = [ksm_path, "secret", "notation", uri]
     
     # Pass through KSM_* environment variables
-    env = {}
+    env: Dict[str, str] = {}
     for key, value in os.environ.items():
         if key.startswith("KSM_"):
             env[key] = value
     
     try:
-        result = subprocess.run(
+        result: subprocess.CompletedProcess[str] = subprocess.run(
             cmd,
             env=env,
             capture_output=True,
@@ -74,7 +74,7 @@ def process_secret(doc: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         The modified document
     """
-    modified = False
+    modified: bool = False
     
     # Process stringData if present
     if 'stringData' in doc:
