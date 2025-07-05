@@ -10,6 +10,7 @@ from keepomize.cli import main
 class TestCliMain:
     """Test the main CLI function."""
 
+    @patch("sys.argv", ["keepomize"])
     @patch("keepomize.cli.YAML")
     @patch("keepomize.cli.process_secret")
     @patch("sys.stdin")
@@ -42,6 +43,7 @@ class TestCliMain:
         mock_process_secret.assert_called_once()
         mock_yaml_instance.dump_all.assert_called_once()
 
+    @patch("sys.argv", ["keepomize"])
     @patch("keepomize.cli.YAML")
     @patch("sys.stdin")
     @patch("sys.stderr")
@@ -56,6 +58,7 @@ class TestCliMain:
 
         assert exc_info.value.code == 1
 
+    @patch("sys.argv", ["keepomize"])
     @patch("keepomize.cli.YAML")
     @patch("keepomize.cli.process_secret")
     @patch("sys.stdin")
@@ -82,6 +85,7 @@ class TestCliMain:
 
         assert exc_info.value.code == 1
 
+    @patch("sys.argv", ["keepomize"])
     @patch("keepomize.cli.YAML")
     @patch("keepomize.cli.process_secret")
     @patch("sys.stdin")
@@ -109,6 +113,7 @@ class TestCliMain:
         mock_process_secret.assert_called_once()
         mock_yaml_instance.dump_all.assert_called_once()
 
+    @patch("sys.argv", ["keepomize"])
     @patch("keepomize.cli.YAML")
     @patch("sys.stdin")
     @patch("sys.stdout")

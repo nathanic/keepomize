@@ -43,7 +43,7 @@ https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.parse_args([])
+    parser.parse_args()
 
     # If we get here, no --help was used, so proceed with normal processing
     # Use ruamel.yaml for better preservation of formatting and comments
