@@ -10,8 +10,10 @@ import sys
 from typing import Dict, Any
 
 
-# Pattern to match Keeper URIs
-KEEPER_URI_PATTERN = re.compile(r'^keeper://([^/]+)/(.+)$')
+# Pattern to match Keeper URIs using Keeper notation
+# Matches keeper://<title_or_uid>/<selector>/<parameters>[[predicates]]
+# Allows for spaces, special characters, and escaped characters in titles
+KEEPER_URI_PATTERN = re.compile(r'^keeper://(.+)$')
 
 
 def resolve_keeper_uri(uri: str) -> str:
@@ -19,7 +21,11 @@ def resolve_keeper_uri(uri: str) -> str:
     Resolve a Keeper URI using ksm exec.
     
     Args:
-        uri: A Keeper URI like "keeper://RECORDID/field/password"
+        uri: A Keeper URI using Keeper notation, such as:
+             - "keeper://MySQL Database/field/password"
+             - "keeper://API Keys/field/api_key"
+             - "keeper://Contact/field/name[first]"
+             - "keeper://Record/custom_field/phone[1][number]"
         
     Returns:
         The resolved secret value
@@ -71,7 +77,7 @@ def process_secret(doc: Dict[str, Any]) -> Dict[str, Any]:
                 resolved = resolve_keeper_uri(value)
                 doc['stringData'][key] = resolved
                 modified = True
-                print(f"Resolved keeper URI in stringData.{key}", file=sys.stderr)
+                #print(f"Resolved keeper URI in stringData.{key}", file=sys.stderr)
     
     # Process data if present (base64 encoded values)
     if 'data' in doc:
@@ -83,9 +89,9 @@ def process_secret(doc: Dict[str, Any]) -> Dict[str, Any]:
                 encoded = base64.b64encode(resolved.encode('utf-8')).decode('ascii')
                 doc['data'][key] = encoded
                 modified = True
-                print(f"Resolved keeper URI in data.{key} (base64 encoded)", file=sys.stderr)
+                #print(f"Resolved keeper URI in data.{key} (base64 encoded)", file=sys.stderr)
     
-    if modified:
-        print(f"Processed Secret: {doc.get('metadata', {}).get('name', 'unnamed')}", file=sys.stderr)
+    # if modified:
+    #     print(f"Processed Secret: {doc.get('metadata', {}).get('name', 'unnamed')}", file=sys.stderr)
     
     return doc

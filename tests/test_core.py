@@ -14,8 +14,13 @@ class TestKeeperUriPattern:
         """Test that valid Keeper URIs match the pattern."""
         valid_uris = [
             "keeper://ABC123/field/password",
-            "keeper://DEF456/field/api_key",
-            "keeper://GHI789/custom/field/nested/path",
+            "keeper://MySQL Database/field/password",
+            "keeper://API Keys/field/api_key",
+            "keeper://Contact/field/name[first]",
+            "keeper://Record/custom_field/phone[1][number]",
+            "keeper://My Record With Spaces/field/login",
+            "keeper://Record/file/certificate.pem",
+            "keeper://Complex Record/field/data[0]",
         ]
         
         for uri in valid_uris:
@@ -24,12 +29,11 @@ class TestKeeperUriPattern:
     def test_invalid_keeper_uri(self):
         """Test that invalid URIs don't match the pattern."""
         invalid_uris = [
-            "keeper://",
-            "keeper://ABC123",
-            "keeper://ABC123/",
-            "notkeeper://ABC123/field/password",
-            "keeper:/ABC123/field/password",
-            "regular-string-value",
+            "keeper://",  # Empty path
+            "notkeeper://ABC123/field/password",  # Wrong protocol
+            "keeper:/ABC123/field/password",  # Missing second slash
+            "regular-string-value",  # Not a URI at all
+            "http://example.com",  # Different protocol
         ]
         
         for uri in invalid_uris:
@@ -48,7 +52,7 @@ class TestResolveKeeperUri:
         mock_result.stdout = "resolved-secret-value"
         mock_run.return_value = mock_result
         
-        result = resolve_keeper_uri("keeper://ABC123/field/password")
+        result = resolve_keeper_uri("keeper://MySQL Database/field/password")
         
         assert result == "resolved-secret-value"
         mock_which.assert_called_once_with("ksm")
@@ -60,7 +64,7 @@ class TestResolveKeeperUri:
         mock_which.return_value = None
         
         with pytest.raises(FileNotFoundError, match="ksm command not found in PATH"):
-            resolve_keeper_uri("keeper://ABC123/field/password")
+            resolve_keeper_uri("keeper://MySQL Database/field/password")
     
     @patch('keepomize.core.shutil.which')
     @patch('keepomize.core.subprocess.run')
@@ -70,7 +74,7 @@ class TestResolveKeeperUri:
         mock_run.side_effect = subprocess.CalledProcessError(1, "ksm")
         
         with pytest.raises(subprocess.CalledProcessError):
-            resolve_keeper_uri("keeper://ABC123/field/password")
+            resolve_keeper_uri("keeper://MySQL Database/field/password")
 
 
 class TestProcessSecret:
@@ -86,7 +90,7 @@ class TestProcessSecret:
             "kind": "Secret",
             "metadata": {"name": "test-secret"},
             "stringData": {
-                "password": "keeper://ABC123/field/password",
+                "password": "keeper://MySQL Database/field/password",
                 "regular-key": "regular-value"
             }
         }
@@ -95,7 +99,7 @@ class TestProcessSecret:
         
         assert result["stringData"]["password"] == "resolved-value"
         assert result["stringData"]["regular-key"] == "regular-value"
-        mock_resolve.assert_called_once_with("keeper://ABC123/field/password")
+        mock_resolve.assert_called_once_with("keeper://MySQL Database/field/password")
     
     @patch('keepomize.core.resolve_keeper_uri')
     def test_process_secret_data(self, mock_resolve):
@@ -107,7 +111,7 @@ class TestProcessSecret:
             "kind": "Secret",
             "metadata": {"name": "test-secret"},
             "data": {
-                "token": "keeper://ABC123/field/token",
+                "token": "keeper://Auth Service/field/token",
                 "regular-key": "cmVndWxhci12YWx1ZQ=="  # base64 encoded "regular-value"
             }
         }
@@ -117,7 +121,7 @@ class TestProcessSecret:
         expected_encoded = base64.b64encode("resolved-value".encode('utf-8')).decode('ascii')
         assert result["data"]["token"] == expected_encoded
         assert result["data"]["regular-key"] == "cmVndWxhci12YWx1ZQ=="
-        mock_resolve.assert_called_once_with("keeper://ABC123/field/token")
+        mock_resolve.assert_called_once_with("keeper://Auth Service/field/token")
     
     @patch('keepomize.core.resolve_keeper_uri')
     def test_process_secret_no_keeper_uris(self, mock_resolve):
@@ -161,11 +165,11 @@ class TestProcessSecret:
             "kind": "Secret",
             "metadata": {"name": "test-secret"},
             "stringData": {
-                "password": "keeper://ABC123/field/password",
+                "password": "keeper://MySQL Database/field/password",
                 "username": "regular-username"
             },
             "data": {
-                "token": "keeper://DEF456/field/token",
+                "token": "keeper://Auth Service/field/token",
                 "config": "Y29uZmlnLXZhbHVl"
             }
         }

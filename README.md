@@ -60,10 +60,11 @@ metadata:
   namespace: default
 type: Opaque
 stringData:
-  database-password: keeper://ABC123/field/password
-  api-key: keeper://DEF456/field/api_key
+  database-password: keeper://MySQL Database/field/password
+  api-key: keeper://API Keys/field/api_key
+  username: keeper://MySQL Database/field/login
 data:
-  secret-token: keeper://GHI789/field/token  # Will be base64 encoded
+  secret-token: keeper://Auth Service/field/token  # Will be base64 encoded
 ```
 
 After processing with keepomize:
@@ -76,21 +77,34 @@ metadata:
 type: Opaque
 stringData:
   database-password: my-actual-password
-  api-key: my-actual-api-key
+  api-key: sk-1234567890abcdef
+  username: mysql_user
 data:
   secret-token: bXktYWN0dWFsLXRva2Vu  # base64 encoded value
 ```
 
 ### Keeper URI format
 
-Keeper URIs follow this format:
+Keeper URIs use [Keeper notation](https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation) which follows this format:
 ```
-keeper://RECORD_ID/field/FIELD_NAME
+keeper://<TITLE|UID>/<selector>/<parameters>[[predicate1][predicate2]]
+```
+
+Common examples for Kubernetes Secrets:
+```
+keeper://MySQL Creds/field/password
+keeper://API Keys/field/api_key
+keeper://Contact/field/name[first]
+keeper://Record/custom_field/phone[1][number]
 ```
 
 Where:
-- `RECORD_ID` is the Keeper record identifier
-- `FIELD_NAME` is the name of the field containing the secret value
+- **First segment**: Record title or unique identifier (UID)
+- **Selector**: `field` for standard fields, `custom_field` for custom fields, `file` for files
+- **Parameters**: Field name or other identifiers
+- **Predicates** (optional): Array indices `[0]` and sub-field access `[property]`
+
+**Note**: Special characters (`/`, `\`, `[`, `]`) in record details must be escaped with backslash.
 
 ### How it works
 

@@ -10,7 +10,7 @@ from keepomize.cli import main
 class TestCliMain:
     """Test the main CLI function."""
     
-    @patch('keepomize.cli.yaml')
+    @patch('keepomize.cli.YAML')
     @patch('keepomize.cli.process_secret')
     @patch('sys.stdin')
     @patch('sys.stdout')
@@ -40,7 +40,7 @@ class TestCliMain:
         mock_process_secret.assert_called_once()
         mock_yaml_instance.dump_all.assert_called_once()
     
-    @patch('keepomize.cli.yaml')
+    @patch('keepomize.cli.YAML')
     @patch('sys.stdin')
     @patch('sys.stderr')
     def test_main_yaml_parse_error(self, mock_stderr, mock_stdin, mock_yaml):
@@ -54,7 +54,7 @@ class TestCliMain:
         
         assert exc_info.value.code == 1
     
-    @patch('keepomize.cli.yaml')
+    @patch('keepomize.cli.YAML')
     @patch('keepomize.cli.process_secret')
     @patch('sys.stdin')
     @patch('sys.stderr')
@@ -78,7 +78,7 @@ class TestCliMain:
         
         assert exc_info.value.code == 1
     
-    @patch('keepomize.cli.yaml')
+    @patch('keepomize.cli.YAML')
     @patch('keepomize.cli.process_secret')
     @patch('sys.stdin')
     @patch('sys.stdout')
@@ -103,7 +103,7 @@ class TestCliMain:
         mock_process_secret.assert_called_once()
         mock_yaml_instance.dump_all.assert_called_once()
     
-    @patch('keepomize.cli.yaml')
+    @patch('keepomize.cli.YAML')
     @patch('sys.stdin')
     @patch('sys.stdout')
     def test_main_ignores_non_secrets(self, mock_stdout, mock_stdin, mock_yaml):
