@@ -3,6 +3,7 @@
 import pytest
 import base64
 import subprocess
+import os
 from unittest.mock import patch, MagicMock
 from keepomize.core import resolve_keeper_uri, process_secret, KEEPER_URI_PATTERN
 
@@ -75,6 +76,31 @@ class TestResolveKeeperUri:
         
         with pytest.raises(subprocess.CalledProcessError):
             resolve_keeper_uri("keeper://MySQL Database/field/password")
+    
+    @patch('keepomize.core.shutil.which')
+    @patch('keepomize.core.subprocess.run')
+    @patch.dict(os.environ, {'KSM_CONFIG': '/path/to/config', 'KSM_TOKEN': 'secret123', 'OTHER_VAR': 'ignored'})
+    def test_resolve_keeper_uri_passes_ksm_env_vars(self, mock_run, mock_which):
+        """Test that KSM_* environment variables are passed through."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "resolved-secret-value"
+        mock_run.return_value = mock_result
+        
+        resolve_keeper_uri("keeper://MySQL Database/field/password")
+        
+        # Verify that subprocess.run was called with KSM_* env vars
+        call_args = mock_run.call_args
+        env_passed = call_args.kwargs['env']
+        
+        assert 'KEEPER_RESOLVE_URI' in env_passed
+        assert 'KSM_CONFIG' in env_passed
+        assert 'KSM_TOKEN' in env_passed
+        assert 'OTHER_VAR' not in env_passed  # Non-KSM vars should not be passed
+        
+        assert env_passed['KSM_CONFIG'] == '/path/to/config'
+        assert env_passed['KSM_TOKEN'] == 'secret123'
+        assert env_passed['KEEPER_RESOLVE_URI'] == 'keeper://MySQL Database/field/password'
 
 
 class TestProcessSecret:

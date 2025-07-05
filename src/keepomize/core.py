@@ -7,6 +7,7 @@ import subprocess
 import base64
 import shutil
 import sys
+import os
 from typing import Dict, Any
 
 
@@ -43,10 +44,16 @@ def resolve_keeper_uri(uri: str) -> str:
     env_var = "KEEPER_RESOLVE_URI"
     cmd = [ksm_path, "exec", "--", "bash", "-c", f"echo -n ${env_var}"]
     
+    # Pass through KSM_* environment variables along with our URI
+    env = {env_var: uri}
+    for key, value in os.environ.items():
+        if key.startswith("KSM_"):
+            env[key] = value
+    
     try:
         result = subprocess.run(
             cmd,
-            env={env_var: uri},
+            env=env,
             capture_output=True,
             text=True,
             check=True

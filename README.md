@@ -11,6 +11,7 @@ Keepomize is designed to work in a pipeline after Kustomize to resolve Keeper UR
 - Python 3.8 or higher
 - The `ksm` command-line tool must be installed and available in your PATH
 - Access to Keeper secrets that you want to resolve
+- Any `KSM_*` environment variables needed for `ksm` configuration (automatically passed through)
 
 ## Installation
 
@@ -124,7 +125,9 @@ Where:
   run: |
     kustomize build overlays/production | keepomize | kubectl apply -f -
   env:
-    KEEPER_CONFIG: ${{ secrets.KEEPER_CONFIG }}
+    KSM_CONFIG: ${{ secrets.KSM_CONFIG }}
+    KSM_TOKEN: ${{ secrets.KSM_TOKEN }}
+    # Any KSM_* environment variables are automatically passed to ksm
 ```
 
 ## Error handling
