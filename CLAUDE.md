@@ -5,7 +5,7 @@ Keepomize is a Python CLI tool that filters Kubernetes manifests to resolve Keep
 
 **Author**: Nathan Stien (nathanism@gmail.com)  
 **GitHub**: nathanic/keepomize  
-**Current Version**: 0.1.0
+**Current Version**: 0.1.2
 
 ## Project Structure
 ```
@@ -100,7 +100,71 @@ keepomize --help
 - Fixed pytest configuration for src-layout projects
 - Added proper .gitignore and removed debug output
 
-## Future Considerations
+## Future Work - Priority Roadmap
+
+### Architecture Philosophy
+**Maintain Filter Pattern**: Continue with the current `kustomize build | keepomize | kubectl apply` pattern. Kustomize plugin integration is NOT recommended due to plugin system immaturity, security concerns, and deployment complexity. The filter pattern aligns with Unix philosophy and modern DevOps practices.
+
+### High Priority (Immediate)
+1. **Critical Bug Fixes**
+   - **Fix trailing newline handling**: Strip single trailing newline from `ksm` output before processing (affects both stringData and base64-encoded data fields)
+   - **Fix environment variable passing**: Use `os.environ.copy()` and overlay KSM_* vars instead of replacing entire environment (preserves HOME, SSL_CERT_FILE, proxy settings needed by ksm)
+
+2. **Essential Features**
+   - Add `--validate` flag to check URI syntax without resolution
+   - Add `--dry-run` flag to show what would be resolved without actual resolution
+   - Add `--debug`/`--verbose` flag for detailed resolution logging
+
+3. **Better Error Context**
+   - Include document names and line numbers in error messages
+   - Provide clearer feedback for common URI syntax issues
+   - Better handling of ksm command failures with actionable suggestions
+
+4. **Integration Documentation**
+   - Comprehensive ArgoCD build hook examples
+   - GitLab CI pipeline integration patterns  
+   - External Secrets Operator compatibility guide
+   - Helm template integration examples
+
+### Medium Priority (Next Release)
+1. **Configuration Support**
+   - Support `~/.keepomize.yaml` for default settings
+   - Allow per-project `.keepomize.yaml` configuration
+   - Configuration for default KSM settings and options
+
+2. **Advanced Processing Control**
+   - Support `keepomize.io/` annotations for per-Secret processing control
+   - Add `--include`/`--exclude` patterns for selective Secret processing
+   - Handle binary/file fields from Keeper appropriately (detect `file` selector, handle base64 encoding)
+
+3. **Developer Experience**
+   - Shell completion scripts for bash/zsh
+   - Better pipeline integration tooling
+   - Improved CLI help and error messages
+
+### Low Priority (Future Versions)
+1. **Format & Extensibility**
+   - JSON input/output support if requested
+   - Extensible resolver architecture for other secret backends
+
+2. **Ecosystem Integration**
+   - **Containerized KRM Function**: Package keepomize + ksm in minimal OCI image for `kustomize fn eval` usage
+   - Create reusable kustomize components for common keepomize patterns
+   - Monitor kustomize plugin ecosystem maturity for future consideration
+   - Integration with other secret management tools
+
+### Architecture Integration Suggestions
+1. **Pipeline Tooling**: Focus on making the filter pattern more powerful rather than pursuing complex integrations
+2. **Observability**: Better logging, metrics, and debugging capabilities for production use
+3. **CI/CD Optimization**: Tools and examples for common continuous deployment patterns
+4. **Security Hardening**: Enhanced validation and safer secret handling practices
+
+## Known Issues to Address
+- **Trailing newlines**: ksm output includes trailing newlines that get preserved in secrets
+- **Environment isolation**: Current KSM_* only approach may break ksm in some environments
+
+### Future Considerations
 - Monitor for new Keeper notation features
-- Consider adding verbose/quiet modes if needed
 - Watch for ksm command updates or new subcommands
+- Keep an eye on kustomize plugin ecosystem maturation
+- Maintain focus on core secret resolution functionality - avoid feature creep

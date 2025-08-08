@@ -173,6 +173,18 @@ MIT License - see LICENSE file for details.
 
 ## Changelog
 
+### 0.1.2 (unreleased)
+
+- **Critical Bug Fixes**:
+  - Fixed trailing newline handling - ksm output now has trailing newlines stripped to prevent malformed secret values
+  - Fixed environment variable inheritance - ksm subprocess now inherits full environment (preserves HOME, SSL_CERT_FILE, proxy settings, etc.)
+- **Testing**: Added comprehensive tests for newline handling edge cases and environment inheritance
+
+### 0.1.1
+
+- **Bug Fix**: Fixed CLI argument parsing to restore --help functionality
+- **Testing**: Added sys.argv patches to CLI tests for proper argument handling
+
 ### 0.1.0
 
 - Initial release

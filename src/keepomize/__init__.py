@@ -5,7 +5,7 @@ A filter for Kubernetes manifests that resolves Keeper URIs in Secret resources
 using the ksm command-line tool.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 from .core import process_secret, resolve_keeper_uri
 
