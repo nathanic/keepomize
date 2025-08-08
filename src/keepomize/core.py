@@ -3,7 +3,6 @@ Core functionality for resolving Keeper URIs in Kubernetes Secret manifests.
 """
 
 import base64
-import os
 import re
 import shutil
 import subprocess
@@ -42,17 +41,11 @@ def resolve_keeper_uri(uri: str) -> str:
     # Use ksm secret notation command to resolve the URI directly
     cmd = [ksm_path, "secret", "notation", uri]
 
-    # Pass through KSM_* environment variables
-    env: Dict[str, str] = {}
-    for key, value in os.environ.items():
-        if key.startswith("KSM_"):
-            env[key] = value
-
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
-            cmd, env=env, capture_output=True, text=True, check=True
+            cmd, capture_output=True, text=True, check=True
         )
-        return result.stdout
+        return result.stdout.rstrip('\n')
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to resolve Keeper URI '{uri}'", file=sys.stderr)
         print(f"ksm stderr: {e.stderr}", file=sys.stderr)

@@ -86,11 +86,11 @@ class TestResolveKeeperUri:
         {
             "KSM_CONFIG": "/path/to/config",
             "KSM_TOKEN": "secret123",
-            "OTHER_VAR": "ignored",
+            "OTHER_VAR": "should_be_inherited",
         },
     )
-    def test_resolve_keeper_uri_passes_ksm_env_vars(self, mock_run, mock_which):
-        """Test that KSM_* environment variables are passed through."""
+    def test_resolve_keeper_uri_inherits_full_environment(self, mock_run, mock_which):
+        """Test that full environment is inherited by ksm subprocess."""
         mock_which.return_value = "/usr/local/bin/ksm"
         mock_result = MagicMock()
         mock_result.stdout = "resolved-secret-value"
@@ -98,19 +98,61 @@ class TestResolveKeeperUri:
 
         resolve_keeper_uri("keeper://MySQL Database/field/password")
 
-        # Verify that subprocess.run was called with KSM_* env vars
+        # Verify that subprocess.run was called without custom env parameter
         call_args = mock_run.call_args
-        env_passed = call_args.kwargs["env"]
+        assert "env" not in call_args.kwargs  # No custom env should be passed
 
-        assert "KSM_CONFIG" in env_passed
-        assert "KSM_TOKEN" in env_passed
-        assert "OTHER_VAR" not in env_passed  # Non-KSM vars should not be passed
-        assert (
-            "KEEPER_RESOLVE_URI" not in env_passed
-        )  # No longer needed with direct notation command
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    def test_resolve_keeper_uri_strips_trailing_newline(self, mock_run, mock_which):
+        """Test that trailing newlines are stripped from ksm output."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "resolved-secret-value\n"
+        mock_run.return_value = mock_result
 
-        assert env_passed["KSM_CONFIG"] == "/path/to/config"
-        assert env_passed["KSM_TOKEN"] == "secret123"
+        result = resolve_keeper_uri("keeper://MySQL Database/field/password")
+
+        assert result == "resolved-secret-value"
+
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    def test_resolve_keeper_uri_strips_all_trailing_newlines(self, mock_run, mock_which):
+        """Test that all trailing newlines are stripped."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "resolved-secret-value\n\n\n"
+        mock_run.return_value = mock_result
+
+        result = resolve_keeper_uri("keeper://MySQL Database/field/password")
+
+        assert result == "resolved-secret-value"
+
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    def test_resolve_keeper_uri_preserves_internal_newlines(self, mock_run, mock_which):
+        """Test that internal newlines are preserved."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "line1\nline2\nline3\n"
+        mock_run.return_value = mock_result
+
+        result = resolve_keeper_uri("keeper://MySQL Database/field/multiline")
+
+        assert result == "line1\nline2\nline3"
+
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    def test_resolve_keeper_uri_no_trailing_newline(self, mock_run, mock_which):
+        """Test handling when ksm output has no trailing newline."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "resolved-secret-value"
+        mock_run.return_value = mock_result
+
+        result = resolve_keeper_uri("keeper://MySQL Database/field/password")
+
+        assert result == "resolved-secret-value"
 
 
 class TestProcessSecret:
