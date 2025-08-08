@@ -154,6 +154,19 @@ class TestResolveKeeperUri:
 
         assert result == "resolved-secret-value"
 
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    def test_resolve_keeper_uri_strips_crlf_line_endings(self, mock_run, mock_which):
+        """Test that Windows-style CRLF line endings are stripped."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "resolved-secret-value\r\n"
+        mock_run.return_value = mock_result
+
+        result = resolve_keeper_uri("keeper://MySQL Database/field/password")
+
+        assert result == "resolved-secret-value"
+
 
 class TestProcessSecret:
     """Test the process_secret function."""

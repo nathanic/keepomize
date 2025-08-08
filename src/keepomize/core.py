@@ -45,7 +45,7 @@ def resolve_keeper_uri(uri: str) -> str:
         result: subprocess.CompletedProcess[str] = subprocess.run(
             cmd, capture_output=True, text=True, check=True
         )
-        return result.stdout.rstrip('\n')
+        return result.stdout.rstrip('\r\n')
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to resolve Keeper URI '{uri}'", file=sys.stderr)
         print(f"ksm stderr: {e.stderr}", file=sys.stderr)

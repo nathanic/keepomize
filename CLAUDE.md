@@ -27,7 +27,7 @@ keepomize/
 - **resolve_keeper_uri()**: Uses `ksm secret notation <uri>` command (elegant approach)
 - **process_secret()**: Processes Kubernetes Secret manifests, resolving Keeper URIs in stringData and data fields
 - **KEEPER_URI_PATTERN**: Simple regex `^keeper://(.+)$` that supports full Keeper notation
-- **Environment Variables**: Automatically passes through KSM_* env vars to ksm subprocess
+- **Environment Variables**: ksm subprocess inherits full environment (preserves HOME, SSL_CERT_FILE, proxy settings, etc.)
 
 ### CLI Interface (`src/keepomize/cli.py`)
 - Uses argparse with comprehensive --help documentation
@@ -81,7 +81,7 @@ keepomize --help
 1. **ksm Integration**: Uses `ksm secret notation` command (not `ksm exec`) for cleaner implementation
 2. **Regex Pattern**: Simplified to `^keeper://(.+)$` to support full Keeper notation complexity
 3. **Error Handling**: Defers URI validation to ksm tool (authoritative source)
-4. **Environment Variables**: Only passes KSM_* prefixed vars for security
+4. **Environment Variables**: Inherits full environment for compatibility (HOME, SSL_CERT_FILE, proxy settings, etc.)
 5. **Build System**: Switched from hatchling to setuptools for better uv compatibility
 6. **Test Configuration**: Added `pythonpath = ["src"]` to pytest config for src-layout
 
@@ -94,7 +94,7 @@ keepomize --help
 
 ## Recent Improvements
 - Added full Keeper notation support with realistic examples
-- Implemented KSM_* environment variable passthrough
+- Implemented full environment inheritance for ksm subprocess compatibility
 - Added comprehensive --help with examples and documentation links
 - Switched to elegant `ksm secret notation` command
 - Fixed pytest configuration for src-layout projects
@@ -107,8 +107,8 @@ keepomize --help
 
 ### High Priority (Immediate)
 1. **Critical Bug Fixes**
-   - **Fix trailing newline handling**: Strip single trailing newline from `ksm` output before processing (affects both stringData and base64-encoded data fields)
-   - **Fix environment variable passing**: Use `os.environ.copy()` and overlay KSM_* vars instead of replacing entire environment (preserves HOME, SSL_CERT_FILE, proxy settings needed by ksm)
+   - **✅ Fix trailing newline handling**: Implemented robust line ending stripping from `ksm` output (affects both stringData and base64-encoded data fields)
+   - **✅ Fix environment variable passing**: Implemented full environment inheritance (preserves HOME, SSL_CERT_FILE, proxy settings needed by ksm)
 
 2. **Essential Features**
    - Add `--validate` flag to check URI syntax without resolution
@@ -159,9 +159,9 @@ keepomize --help
 3. **CI/CD Optimization**: Tools and examples for common continuous deployment patterns
 4. **Security Hardening**: Enhanced validation and safer secret handling practices
 
-## Known Issues to Address
-- **Trailing newlines**: ksm output includes trailing newlines that get preserved in secrets
-- **Environment isolation**: Current KSM_* only approach may break ksm in some environments
+## Recently Fixed Issues (v0.1.2)
+- **✅ Trailing newlines**: Fixed robust line ending stripping from ksm output  
+- **✅ Environment isolation**: Fixed by implementing full environment inheritance
 
 ### Future Considerations
 - Monitor for new Keeper notation features

@@ -173,7 +173,7 @@ MIT License - see LICENSE file for details.
 
 ## Changelog
 
-### 0.1.2 (unreleased)
+### 0.1.2
 
 - **Critical Bug Fixes**:
   - Fixed trailing newline handling - ksm output now has trailing newlines stripped to prevent malformed secret values
