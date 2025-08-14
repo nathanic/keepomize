@@ -162,6 +162,9 @@ keepomize --help
 ## Recently Fixed Issues (v0.1.2)
 - **✅ Trailing newlines**: Fixed robust line ending stripping from ksm output  
 - **✅ Environment isolation**: Fixed by implementing full environment inheritance
+- **✅ KSM timeout protection**: Added configurable timeout for ksm subprocess calls (KEEPOMIZE_KSM_TIMEOUT env var, default 30s)
+- **✅ Version management**: Removed version duplication by using single source of truth in pyproject.toml with importlib.metadata
+- **✅ CLI improvements**: Added --version flag and improved help documentation with environment variable info
 
 ### Future Considerations
 - Monitor for new Keeper notation features

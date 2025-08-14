@@ -7,6 +7,12 @@ import subprocess
 import sys
 from typing import Any, List
 
+try:
+    from importlib.metadata import version as get_version
+except ImportError:
+    # Python < 3.8 fallback
+    from importlib_metadata import version as get_version  # type: ignore[import-not-found,no-redef]  # noqa: I001
+
 from ruamel.yaml import YAML
 
 from .core import process_secret
@@ -37,10 +43,17 @@ Keeper URI format:
     keeper://Contact/field/name[first]
     keeper://Record/custom_field/phone[1][number]
 
+Environment variables:
+  KEEPOMIZE_KSM_TIMEOUT: Timeout in seconds for ksm commands (default: 30)
+
 For more information about Keeper notation:
 https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--version", action="version", version=f"keepomize {get_version('keepomize')}"
     )
 
     parser.parse_args()

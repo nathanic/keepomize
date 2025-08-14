@@ -3,6 +3,7 @@ Core functionality for resolving Keeper URIs in Kubernetes Secret manifests.
 """
 
 import base64
+import os
 import re
 import shutil
 import subprocess
@@ -31,6 +32,7 @@ def resolve_keeper_uri(uri: str) -> str:
 
     Raises:
         subprocess.CalledProcessError: If ksm fails to resolve the URI
+        subprocess.TimeoutExpired: If ksm times out
         FileNotFoundError: If ksm command is not found
     """
     # Find the full path to ksm
@@ -38,14 +40,35 @@ def resolve_keeper_uri(uri: str) -> str:
     if not ksm_path:
         raise FileNotFoundError("ksm command not found in PATH")
 
+    # Get timeout from environment variable, default to 30 seconds
+    timeout_str = os.getenv("KEEPOMIZE_KSM_TIMEOUT", "30")
+    try:
+        timeout = float(timeout_str)
+    except ValueError:
+        print(
+            f"Warning: Invalid KEEPOMIZE_KSM_TIMEOUT '{timeout_str}', using default 30 seconds",
+            file=sys.stderr,
+        )
+        timeout = 30.0
+
     # Use ksm secret notation command to resolve the URI directly
     cmd = [ksm_path, "secret", "notation", uri]
 
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
-            cmd, capture_output=True, text=True, check=True
+            cmd, capture_output=True, text=True, check=True, timeout=timeout
         )
-        return result.stdout.rstrip('\r\n')
+        return result.stdout.rstrip("\r\n")
+    except subprocess.TimeoutExpired:
+        print(
+            f"Error: ksm command timed out after {timeout} seconds while resolving Keeper URI",
+            file=sys.stderr,
+        )
+        print(
+            "You can adjust the timeout with KEEPOMIZE_KSM_TIMEOUT environment variable",
+            file=sys.stderr,
+        )
+        raise
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to resolve Keeper URI '{uri}'", file=sys.stderr)
         print(f"ksm stderr: {e.stderr}", file=sys.stderr)

@@ -142,3 +142,12 @@ class TestCliMain:
             # Should not process any documents
             mock_process_secret.assert_not_called()
             mock_yaml_instance.dump_all.assert_called_once()
+
+    @patch("sys.argv", ["keepomize", "--version"])
+    def test_main_version_flag(self):
+        """Test that --version flag works correctly."""
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        # argparse exits with code 0 for --version
+        assert exc_info.value.code == 0

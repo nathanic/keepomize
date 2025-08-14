@@ -117,7 +117,9 @@ class TestResolveKeeperUri:
 
     @patch("keepomize.core.shutil.which")
     @patch("keepomize.core.subprocess.run")
-    def test_resolve_keeper_uri_strips_all_trailing_newlines(self, mock_run, mock_which):
+    def test_resolve_keeper_uri_strips_all_trailing_newlines(
+        self, mock_run, mock_which
+    ):
         """Test that all trailing newlines are stripped."""
         mock_which.return_value = "/usr/local/bin/ksm"
         mock_result = MagicMock()
@@ -166,6 +168,72 @@ class TestResolveKeeperUri:
         result = resolve_keeper_uri("keeper://MySQL Database/field/password")
 
         assert result == "resolved-secret-value"
+
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    @patch.dict(os.environ, {"KEEPOMIZE_KSM_TIMEOUT": "15"})
+    def test_resolve_keeper_uri_custom_timeout(self, mock_run, mock_which):
+        """Test that custom timeout from environment variable is used."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "resolved-value\n"
+        mock_run.return_value = mock_result
+
+        resolve_keeper_uri("keeper://MySQL Database/field/password")
+
+        mock_run.assert_called_once_with(
+            [
+                "/usr/local/bin/ksm",
+                "secret",
+                "notation",
+                "keeper://MySQL Database/field/password",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=15.0,
+        )
+
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    @patch.dict(os.environ, {"KEEPOMIZE_KSM_TIMEOUT": "invalid"})
+    def test_resolve_keeper_uri_invalid_timeout_uses_default(
+        self, mock_run, mock_which
+    ):
+        """Test that invalid timeout value falls back to default."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_result = MagicMock()
+        mock_result.stdout = "resolved-value\n"
+        mock_run.return_value = mock_result
+
+        resolve_keeper_uri("keeper://MySQL Database/field/password")
+
+        mock_run.assert_called_once_with(
+            [
+                "/usr/local/bin/ksm",
+                "secret",
+                "notation",
+                "keeper://MySQL Database/field/password",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30.0,
+        )
+
+    @patch("keepomize.core.shutil.which")
+    @patch("keepomize.core.subprocess.run")
+    def test_resolve_keeper_uri_timeout_error(self, mock_run, mock_which, capsys):
+        """Test handling of timeout error."""
+        mock_which.return_value = "/usr/local/bin/ksm"
+        mock_run.side_effect = subprocess.TimeoutExpired(["ksm"], 30)
+
+        with pytest.raises(subprocess.TimeoutExpired):
+            resolve_keeper_uri("keeper://MySQL Database/field/password")
+
+        captured = capsys.readouterr()
+        assert "timed out after 30.0 seconds" in captured.err
+        assert "KEEPOMIZE_KSM_TIMEOUT" in captured.err
 
 
 class TestProcessSecret:
