@@ -75,6 +75,32 @@ def resolve_keeper_uri(uri: str) -> str:
         raise
 
 
+def process_document(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Process any document, resolving Keeper URIs in all string values recursively.
+
+    Args:
+        doc: A dict representing any YAML document
+
+    Returns:
+        The modified document
+    """
+    def process_value(value: Any) -> Any:
+        """Recursively process values, resolving Keeper URIs in strings."""
+        if isinstance(value, str) and KEEPER_URI_PATTERN.match(value):
+            return resolve_keeper_uri(value)
+        elif isinstance(value, dict):
+            return {k: process_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [process_value(item) for item in value]
+        else:
+            return value
+
+    # Process the entire document recursively
+    return process_value(doc)  # type: ignore[no-any-return]
+
+
+# has special stringData abd base64 logic for Secrets
 def process_secret(doc: Dict[str, Any]) -> Dict[str, Any]:
     """
     Process a Kubernetes Secret document, resolving any Keeper URIs.

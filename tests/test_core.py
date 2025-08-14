@@ -7,7 +7,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from keepomize.core import KEEPER_URI_PATTERN, process_secret, resolve_keeper_uri
+from keepomize.core import (
+    KEEPER_URI_PATTERN,
+    process_document,
+    process_secret,
+    resolve_keeper_uri,
+)
 
 
 class TestKeeperUriPattern:
@@ -339,3 +344,143 @@ class TestProcessSecret:
         assert result["data"]["config"] == "Y29uZmlnLXZhbHVl"
 
         assert mock_resolve.call_count == 2
+
+
+class TestProcessDocument:
+    """Test the process_document function."""
+
+    @patch("keepomize.core.resolve_keeper_uri")
+    def test_process_document_simple_strings(self, mock_resolve):
+        """Test processing document with simple string values containing Keeper URIs."""
+        mock_resolve.return_value = "resolved-value"
+
+        doc = {
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {"name": "test-config"},
+            "data": {
+                "password": "keeper://MySQL Database/field/password",
+                "regular-key": "regular-value",
+            },
+        }
+
+        result = process_document(doc)
+
+        assert result["data"]["password"] == "resolved-value"
+        assert result["data"]["regular-key"] == "regular-value"
+        mock_resolve.assert_called_once_with("keeper://MySQL Database/field/password")
+
+    @patch("keepomize.core.resolve_keeper_uri")
+    def test_process_document_nested_dict(self, mock_resolve):
+        """Test processing document with nested dictionaries."""
+        mock_resolve.side_effect = ["resolved-password", "resolved-token"]
+
+        doc = {
+            "apiVersion": "v1",
+            "kind": "Deployment",
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "env": [
+                                    {
+                                        "name": "DB_PASSWORD",
+                                        "value": "keeper://MySQL Database/field/password",
+                                    },
+                                    {
+                                        "name": "API_TOKEN",
+                                        "value": "keeper://API Keys/field/token",
+                                    },
+                                    {
+                                        "name": "REGULAR_VAR",
+                                        "value": "regular-value",
+                                    },
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+        }
+
+        result = process_document(doc)
+
+        env_vars = result["spec"]["template"]["spec"]["containers"][0]["env"]
+        assert env_vars[0]["value"] == "resolved-password"
+        assert env_vars[1]["value"] == "resolved-token"
+        assert env_vars[2]["value"] == "regular-value"
+        assert mock_resolve.call_count == 2
+
+    @patch("keepomize.core.resolve_keeper_uri")
+    def test_process_document_lists(self, mock_resolve):
+        """Test processing document with lists containing Keeper URIs."""
+        mock_resolve.return_value = "resolved-value"
+
+        doc = {
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {"name": "test-config"},
+            "data": {
+                "script": [
+                    "#!/bin/bash",
+                    "keeper://MySQL Database/field/password",
+                    "echo 'Regular line'",
+                ]
+            },
+        }
+
+        result = process_document(doc)
+
+        assert result["data"]["script"][0] == "#!/bin/bash"
+        assert result["data"]["script"][1] == "resolved-value"
+        assert result["data"]["script"][2] == "echo 'Regular line'"
+        mock_resolve.assert_called_once_with("keeper://MySQL Database/field/password")
+
+    @patch("keepomize.core.resolve_keeper_uri")
+    def test_process_document_no_keeper_uris(self, mock_resolve):
+        """Test processing document with no Keeper URIs."""
+        doc = {
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {"name": "test-config"},
+            "data": {"key": "value", "nested": {"inner": "inner-value"}},
+        }
+
+        result = process_document(doc)
+
+        assert result == doc
+        mock_resolve.assert_not_called()
+
+    @patch("keepomize.core.resolve_keeper_uri")
+    def test_process_document_mixed_types(self, mock_resolve):
+        """Test processing document with mixed data types."""
+        mock_resolve.return_value = "resolved-value"
+
+        doc = {
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {"name": "test-config"},
+            "data": {
+                "string_keeper": "keeper://MySQL Database/field/password",
+                "string_regular": "regular-value",
+                "number": 42,
+                "boolean": True,
+                "null_value": None,
+                "list": ["item1", "keeper://API Keys/field/token"],
+                "nested": {"keeper": "keeper://Secret/field/value", "regular": "value"},
+            },
+        }
+
+        result = process_document(doc)
+
+        assert result["data"]["string_keeper"] == "resolved-value"
+        assert result["data"]["string_regular"] == "regular-value"
+        assert result["data"]["number"] == 42
+        assert result["data"]["boolean"] is True
+        assert result["data"]["null_value"] is None
+        assert result["data"]["list"][0] == "item1"
+        assert result["data"]["list"][1] == "resolved-value"
+        assert result["data"]["nested"]["keeper"] == "resolved-value"
+        assert result["data"]["nested"]["regular"] == "value"
+        assert mock_resolve.call_count == 3

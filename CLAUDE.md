@@ -1,11 +1,11 @@
 # Claude Context for Keepomize Project
 
 ## Project Overview
-Keepomize is a Python CLI tool that filters Kubernetes manifests to resolve Keeper URIs in Secret resources using the `ksm` command-line tool. It's designed to work in pipelines after Kustomize.
+Keepomize is a Python CLI tool that filters Kubernetes manifests to resolve Keeper URIs in Secret resources (or all documents with `--all` flag) using the `ksm` command-line tool. It's designed to work in pipelines after Kustomize.
 
 **Author**: Nathan Stien (nathanism@gmail.com)  
 **GitHub**: nathanic/keepomize  
-**Current Version**: 0.1.2
+**Current Version**: 0.1.3-dev
 
 ## Project Structure
 ```
@@ -14,7 +14,7 @@ keepomize/
 │   ├── __init__.py          # Package initialization
 │   ├── core.py              # Core URI resolution logic
 │   └── cli.py               # Command-line interface with argparse
-├── tests/                   # Comprehensive pytest test suite (97% coverage)
+├── tests/                   # Comprehensive pytest test suite (96% coverage)
 ├── .github/workflows/       # CI/CD for testing and PyPI publishing
 ├── pyproject.toml          # uv project configuration with setuptools
 ├── README.md               # Complete documentation
@@ -26,6 +26,7 @@ keepomize/
 ### Core Functionality (`src/keepomize/core.py`)
 - **resolve_keeper_uri()**: Uses `ksm secret notation <uri>` command (elegant approach)
 - **process_secret()**: Processes Kubernetes Secret manifests, resolving Keeper URIs in stringData and data fields
+- **process_document()**: Processes any document type, recursively resolving Keeper URIs in all string values (used with `--all` flag)
 - **KEEPER_URI_PATTERN**: Simple regex `^keeper://(.+)$` that supports full Keeper notation
 - **Environment Variables**: ksm subprocess inherits full environment (preserves HOME, SSL_CERT_FILE, proxy settings, etc.)
 
@@ -34,6 +35,7 @@ keepomize/
 - Includes Keeper notation examples and links to official docs
 - Processes YAML from stdin, outputs to stdout (filter pattern)
 - Uses ruamel.yaml for better formatting preservation
+- **--all flag**: Process all documents, not just Kubernetes Secrets
 
 ### Keeper Notation Support
 Supports full Keeper notation syntax:
@@ -48,7 +50,7 @@ Examples:
 ## Development Setup
 - **Package Manager**: uv (modern Python packaging)
 - **Build System**: setuptools with src-layout
-- **Testing**: pytest with 16 tests, 97% coverage
+- **Testing**: pytest with 35 tests, 96% coverage
 - **Code Quality**: ruff (linting), mypy (type checking)
 - **Installation**: `pipx install -e .` for development (editable install)
 
@@ -62,11 +64,15 @@ uv run mypy src/keepomize        # Type check
 
 ## Usage Patterns
 ```bash
-# Basic usage
+# Basic usage (processes only Secret resources)
 kustomize build overlays/prod | keepomize | kubectl apply -f -
+
+# Process all documents for Keeper URIs
+kustomize build overlays/prod | keepomize --all | kubectl apply -f -
 
 # With OpenShift
 kustomize build overlays/prod | keepomize | oc apply -f -
+kustomize build overlays/prod | keepomize --all | oc apply -f -
 
 # Help
 keepomize --help
@@ -158,6 +164,12 @@ keepomize --help
 2. **Observability**: Better logging, metrics, and debugging capabilities for production use
 3. **CI/CD Optimization**: Tools and examples for common continuous deployment patterns
 4. **Security Hardening**: Enhanced validation and safer secret handling practices
+
+## New Features (v0.1.3-dev)
+- **✅ --all flag**: Added `--all` CLI flag to process all documents, not just Secrets
+- **✅ Universal processing**: New `process_document()` function recursively processes any document type
+- **✅ Comprehensive testing**: Added 11 new tests covering the --all flag functionality
+- **✅ Updated documentation**: CLI help and examples updated to show both processing modes
 
 ## Recently Fixed Issues (v0.1.2)
 - **✅ Trailing newlines**: Fixed robust line ending stripping from ksm output  

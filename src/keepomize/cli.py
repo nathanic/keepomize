@@ -15,24 +15,29 @@ except ImportError:
 
 from ruamel.yaml import YAML
 
-from .core import process_secret
+from .core import process_document, process_secret
 
 
 def main() -> None:
     """
     Main entry point for the keepomize CLI.
 
-    Reads a multi-document YAML stream from stdin, finds any Kubernetes Secret
-    resources, and replaces Keeper URIs in their stringData and data fields
-    by resolving them through ksm.
+    Reads a multi-document YAML stream from stdin. By default, finds any
+    Kubernetes Secret resources and replaces Keeper URIs in their stringData
+    and data fields by resolving them through ksm. With --all flag, processes
+    all documents and resolves Keeper URIs in any string values.
     """
     parser = argparse.ArgumentParser(
         prog="keepomize",
-        description="A filter for Kubernetes manifests that resolves Keeper URIs in Secret resources",
+        description="A filter for Kubernetes manifests that resolves Keeper URIs in Secret resources (or all documents with --all)",
         epilog="""
 Examples:
+  # Process only Secret resources (default behavior)
   kustomize build overlays/prod | keepomize | kubectl apply -f -
   kustomize build overlays/prod | keepomize | oc apply -f -
+
+  # Process all documents for Keeper URIs
+  kustomize build overlays/prod | keepomize --all | kubectl apply -f -
 
 Keeper URI format:
   keeper://<TITLE|UID>/<selector>/<parameters>[[predicate1][predicate2]]
@@ -56,7 +61,13 @@ https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
         "--version", action="version", version=f"keepomize {get_version('keepomize')}"
     )
 
-    parser.parse_args()
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Process all documents, not just Kubernetes Secrets. Will search for and resolve Keeper URIs in any string values throughout all YAML documents.",
+    )
+
+    args = parser.parse_args()
 
     # If we get here, no --help was used, so proceed with normal processing
     # Use ruamel.yaml for better preservation of formatting and comments
@@ -76,10 +87,15 @@ https://docs.keeper.io/en/keeperpam/secrets-manager/about/keeper-notation
         if doc is None:
             continue
 
-        # Check if this is a Kubernetes Secret
-        if isinstance(doc, dict) and doc.get("kind") == "Secret":
+        # Process documents based on --all flag
+        if isinstance(doc, dict):
             try:
-                process_secret(doc)
+                if args.all:
+                    # Process all documents when --all flag is used
+                    documents[i] = process_document(doc)
+                elif doc.get("kind") == "Secret":
+                    # Default behavior: only process Kubernetes Secrets
+                    process_secret(doc)
             except subprocess.CalledProcessError:
                 sys.exit(1)
             except Exception as e:
